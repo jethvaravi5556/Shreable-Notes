@@ -1,3 +1,4 @@
+// ================= AI PANEL =================
 import { useState, useEffect } from "react"
 import {
   Sparkles,
@@ -8,11 +9,9 @@ import {
   Lightbulb,
   Zap,
   ChevronDown,
-  ChevronUp,
   X,
   Loader2,
   AlertTriangle,
-  Info,
   BadgeInfo,
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
@@ -20,7 +19,7 @@ import { useNotes } from "../contexts/notes-context"
 import { APIService } from "../lib/api"
 import { cn } from "../lib/utils"
 
-// Reusable Section Component for consistent layout and animations
+// Section Component
 const Section = ({ title, icon: Icon, expanded, onToggle, children, className }) => (
   <motion.div
     initial={false}
@@ -59,7 +58,7 @@ const Section = ({ title, icon: Icon, expanded, onToggle, children, className })
   </motion.div>
 )
 
-// Main AI Panel Component
+// Main AI Panel
 export function AIPanel({ noteId }) {
   const { getNote, updateNote } = useNotes()
   const [isGenerating, setIsGenerating] = useState(false)
@@ -85,13 +84,12 @@ export function AIPanel({ noteId }) {
     }
 
     const checkRateLimit = () => {
-      const rateLimitKey = "gemini_rate_limit"
-      const rateLimitData = localStorage.getItem(rateLimitKey)
-      if (rateLimitData) {
-        const { timestamp, count } = JSON.parse(rateLimitData)
+      const data = localStorage.getItem("gemini_rate_limit")
+      if (data) {
+        const { timestamp, count } = JSON.parse(data)
         const now = Date.now()
-        const dayInMs = 24 * 60 * 60 * 1000
-        setRateLimited(now - timestamp < dayInMs && count >= 50)
+        const day = 24 * 60 * 60 * 1000
+        setRateLimited(now - timestamp < day && count >= 50)
       } else {
         setRateLimited(false)
       }
@@ -111,6 +109,7 @@ export function AIPanel({ noteId }) {
     setError(null)
   }
 
+  // ✅ FIXED: trust APIService output (no extra parsing)
   const analyzeContent = async (content) => {
     if (!content.trim()) {
       resetAnalysis()
@@ -121,21 +120,8 @@ export function AIPanel({ noteId }) {
     setError(null)
     try {
       const plainText = content.replace(/<[^>]*>/g, "").trim()
-      const response = await APIService.analyzeContent(plainText)
+      const data = await APIService.analyzeContent(plainText)
 
-      let analysisText = ""
-      if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
-        analysisText = response.candidates[0].content.parts[0].text
-      } else {
-        throw new Error("Invalid API response structure.")
-      }
-
-      // Sanitize and parse JSON
-      let cleanJson = analysisText.trim().replace(/^```(?:json)?\s*|\s*```$/g, "")
-      const jsonMatch = cleanJson.match(/\{[\s\S]*\}/)
-      if (jsonMatch) cleanJson = jsonMatch[0]
-
-      const data = JSON.parse(cleanJson)
       setAnalysisData({
         summary: data.summary || "No summary available.",
         suggestedTags: Array.isArray(data.tags) ? data.tags : [],
@@ -161,11 +147,8 @@ export function AIPanel({ noteId }) {
   const toggleSection = (section) => {
     setExpandedSections((prev) => {
       const newExpanded = new Set(prev)
-      if (newExpanded.has(section)) {
-        newExpanded.delete(section)
-      } else {
-        newExpanded.add(section)
-      }
+      if (newExpanded.has(section)) newExpanded.delete(section)
+      else newExpanded.add(section)
       return newExpanded
     })
   }
@@ -270,7 +253,7 @@ export function AIPanel({ noteId }) {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -282,7 +265,7 @@ export function AIPanel({ noteId }) {
           </motion.div>
         )}
 
-        {/* Summary Section */}
+        {/* --- Summary Section --- */}
         <Section
           title="Summary"
           icon={FileText}
@@ -296,7 +279,7 @@ export function AIPanel({ noteId }) {
           </div>
         </Section>
 
-        {/* Suggested Tags Section */}
+        {/* --- Suggested Tags --- */}
         <Section
           title="Suggested Tags"
           icon={Tags}
@@ -325,7 +308,7 @@ export function AIPanel({ noteId }) {
           )}
         </Section>
 
-        {/* Grammar Check Section */}
+        {/* --- Grammar Check --- */}
         <Section
           title="Grammar Check"
           icon={CheckCircle}
@@ -355,7 +338,7 @@ export function AIPanel({ noteId }) {
           )}
         </Section>
 
-        {/* Glossary Section */}
+        {/* --- Glossary --- */}
         <Section
           title="Glossary"
           icon={Lightbulb}
@@ -378,7 +361,7 @@ export function AIPanel({ noteId }) {
           )}
         </Section>
 
-        {/* Translation Section */}
+        {/* --- Translate --- */}
         <Section
           title="Translate"
           icon={Languages}
@@ -391,17 +374,15 @@ export function AIPanel({ noteId }) {
               className="w-full rounded-md border border-zinc-700/50 bg-zinc-800/40 p-2 text-sm text-zinc-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
               defaultValue=""
             >
-              <option value="" disabled className="bg-zinc-900 text-zinc-500">
-                Select language
-              </option>
-              <option value="es" className="bg-zinc-900">Spanish</option>
-              <option value="fr" className="bg-zinc-900">French</option>
-              <option value="de" className="bg-zinc-900">German</option>
-              <option value="it" className="bg-zinc-900">Italian</option>
-              <option value="pt" className="bg-zinc-900">Portuguese</option>
-              <option value="ja" className="bg-zinc-900">Japanese</option>
-              <option value="ko" className="bg-zinc-900">Korean</option>
-              <option value="zh" className="bg-zinc-900">Chinese</option>
+              <option value="" disabled>Select language</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="it">Italian</option>
+              <option value="pt">Portuguese</option>
+              <option value="ja">Japanese</option>
+              <option value="ko">Korean</option>
+              <option value="zh">Chinese</option>
             </select>
 
             {translationResult && (
@@ -418,7 +399,6 @@ export function AIPanel({ noteId }) {
                   <button
                     onClick={() => setTranslationResult(null)}
                     className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-blue-800/30 hover:text-white"
-                    title="Clear translation"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -440,7 +420,7 @@ export function AIPanel({ noteId }) {
           </div>
         </Section>
 
-        {/* AI Insights Section */}
+        {/* --- Insights --- */}
         <Section
           title="AI Insights"
           icon={Zap}

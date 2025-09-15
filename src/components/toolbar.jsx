@@ -109,7 +109,7 @@ export function Toolbar({
   if (isMobile) {
     return (
       <>
-        <div className="h-full flex items-center justify-between px-4 glass-strong border-b border-gray-200/60 dark:border-gray-700/60 animate-fade-in overflow-visible relative">
+        <div className="h-full flex items-center justify-between px-4 glass-strong border-2 border-white/30 dark:border-white/20 animate-fade-in overflow-visible relative ">
           {/* Multi-layer background gradients */}
           <div className="absolute inset-0 bg-gradient-to-r from-violet-50/60 via-purple-50/40 to-pink-50/60 dark:from-violet-950/30 dark:via-purple-950/20 dark:to-pink-950/30" />
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-indigo-50/20 to-purple-50/30 dark:from-blue-950/20 dark:via-indigo-950/10 dark:to-purple-950/20" />
