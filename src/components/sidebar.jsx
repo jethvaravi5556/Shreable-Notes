@@ -191,8 +191,8 @@ export function Sidebar({ selectedNoteId, onSelectNote, isMobile, onClose }) {
                   onClick={() => setSearchFilters(prev => ({ ...prev, showPinned: !prev.showPinned }))}
                   className={cn(
                     "px-2 py-1 text-xs rounded-lg transition-all duration-200",
-                    searchFilters.showPinned 
-                      ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" 
+                    searchFilters.showPinned
+                      ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"
                       : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
                   )}
                 >
@@ -202,8 +202,8 @@ export function Sidebar({ selectedNoteId, onSelectNote, isMobile, onClose }) {
                   onClick={() => setSearchFilters(prev => ({ ...prev, showEncrypted: !prev.showEncrypted }))}
                   className={cn(
                     "px-2 py-1 text-xs rounded-lg transition-all duration-200",
-                    searchFilters.showEncrypted 
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" 
+                    searchFilters.showEncrypted
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                       : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
                   )}
                 >
@@ -213,8 +213,8 @@ export function Sidebar({ selectedNoteId, onSelectNote, isMobile, onClose }) {
                   onClick={() => setSearchFilters(prev => ({ ...prev, showRegular: !prev.showRegular }))}
                   className={cn(
                     "px-2 py-1 text-xs rounded-lg transition-all duration-200",
-                    searchFilters.showRegular 
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" 
+                    searchFilters.showRegular
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                       : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
                   )}
                 >
@@ -238,7 +238,7 @@ export function Sidebar({ selectedNoteId, onSelectNote, isMobile, onClose }) {
             {/* Search Results Count */}
             {searchQuery && (
               <div className="text-xs text-gray-500 dark:text-gray-400 animate-fade-in">
-                Found {filteredNotes.length} note{filteredNotes.length !== 1 ? 's' : ''} 
+                Found {filteredNotes.length} note{filteredNotes.length !== 1 ? 's' : ''}
                 {searchQuery && ` for "${searchQuery}"`}
               </div>
             )}
@@ -361,7 +361,7 @@ function NoteCard({
     >
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      
+
       {/* Floating particles on hover */}
       {isHovered && (
         <>
@@ -373,13 +373,13 @@ function NoteCard({
         <h3 className="font-medium text-sm truncate flex-1 text-balance flex items-center gap-2">
           {note.isEncrypted && <Lock className="h-3 w-3 text-amber-400" />}
           {note.isPinned && <Pin className="h-3 w-3 text-purple-400" />}
-          <span 
-            dangerouslySetInnerHTML={{ 
-              __html: highlightText(getTitle(note.title), searchQuery) 
-            }} 
+          <span
+            dangerouslySetInnerHTML={{
+              __html: highlightText(getTitle(note.title), searchQuery)
+            }}
           />
         </h3>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
           <Button
             size="sm"
             variant="ghost"
@@ -420,11 +420,11 @@ function NoteCard({
         </div>
       </div>
 
-      <p 
+      <p
         className="text-xs text-muted-foreground mb-2 line-clamp-2 text-pretty relative z-10"
-        dangerouslySetInnerHTML={{ 
-          __html: highlightText(getPreview(note.content), searchQuery) 
-        }} 
+        dangerouslySetInnerHTML={{
+          __html: highlightText(getPreview(note.content), searchQuery)
+        }}
       />
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
