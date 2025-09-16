@@ -11,7 +11,10 @@ import OpenAI from "openai";
 export class APIService {
   // ===== API KEY HANDLING =====
   static geminiKeys = [
+    import.meta.env?.VITE_GEMINI_API_KEY_4 || process.env?.VITE_GEMINI_API_KEY_4,
     import.meta.env?.VITE_GEMINI_API_KEY_3 || process.env?.VITE_GEMINI_API_KEY_3,
+    import.meta.env?.VITE_GEMINI_API_KEY_2 || process.env?.VITE_GEMINI_API_KEY_2,
+    import.meta.env?.VITE_GEMINI_API_KEY_1 || process.env?.VITE_GEMINI_API_KEY_1,
   ].filter(Boolean);
 
   static currentGeminiIndex = 0;
@@ -117,7 +120,7 @@ export class APIService {
   }
 
   // ===== HUGGING FACE REQUEST =====
-  static async makeHFRequest(prompt, model = "google/flan-t5-small") {
+  static async makeHFRequest(prompt, model = "bigscience/bloomz-560m") {
     const apiKey = this.getHFKey();
     if (!apiKey) throw new Error("Hugging Face API key not configured");
 
