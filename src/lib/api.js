@@ -21,10 +21,10 @@ export class APIService {
   // ===== GEMINI REQUEST VIA SERVERLESS =====
   static async makeGeminiRequest(prompt) {
     try {
-      const response = await fetch("/.netlify/functions/gemini", {
+      const response = await fetch("/.netlify/functions/api-proxy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, service: "gemini" }),
       });
 
       if (!response.ok) {
@@ -158,8 +158,6 @@ export class APIService {
   }
 
   // ===== CONTENT ANALYSIS =====
-  // ===== CONTENT ANALYSIS =====
-  s; // ===== CONTENT ANALYSIS =====
   static async analyzeContent(content) {
     const prompt = `Analyze this text and return ONLY JSON with this exact structure (no extra text):
 {
