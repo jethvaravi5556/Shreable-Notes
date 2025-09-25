@@ -1,31 +1,7 @@
-// API service for Gemini, OpenAI, and Hugging Face with fallback
-// Environment variables needed:
-//   VITE_GEMINI_API_KEY_1
-//   VITE_GEMINI_API_KEY_2
-//   VITE_GEMINI_API_KEY_3
-//   VITE_HUGGINGFACE_API_KEY
-//   VITE_OPENAI_API_KEY
-
 import OpenAI from "openai";
 
 export class APIService {
-  // ===== API KEY HANDLING =====
-  static geminiKeys = [
-    import.meta.env?.VITE_GEMINI_API_KEY_4 || process.env?.VITE_GEMINI_API_KEY_4,
-    import.meta.env?.VITE_GEMINI_API_KEY_3 || process.env?.VITE_GEMINI_API_KEY_3,
-    import.meta.env?.VITE_GEMINI_API_KEY_2 || process.env?.VITE_GEMINI_API_KEY_2,
-    import.meta.env?.VITE_GEMINI_API_KEY_1 || process.env?.VITE_GEMINI_API_KEY_1,
-  ].filter(Boolean);
-
-  static currentGeminiIndex = 0;
-
-  static getGeminiKey() {
-    if (!this.geminiKeys.length) throw new Error("No Gemini API keys configured");
-    const key = this.geminiKeys[this.currentGeminiIndex];
-    this.currentGeminiIndex = (this.currentGeminiIndex + 1) % this.geminiKeys.length;
-    return key;
-  }
-
+  // ===== OPENAI & HF KEYS =====
   static getHFKey() {
     return (
       import.meta.env?.VITE_HUGGINGFACE_API_KEY ||
@@ -42,58 +18,30 @@ export class APIService {
     );
   }
 
-  // ===== GEMINI REQUEST =====
+  // ===== GEMINI REQUEST VIA SERVERLESS =====
   static async makeGeminiRequest(prompt) {
-    if (!this.geminiKeys.length) throw new Error("Gemini API keys not configured");
+    try {
+      const response = await fetch("/.netlify/functions/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
 
-    const modelName = "gemini-1.5-flash";
-    const requestBody = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTokens: 2048 },
-      safetySettings: [
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      ],
-    };
-
-    for (let i = 0; i < this.geminiKeys.length; i++) {
-      const apiKey = this.getGeminiKey();
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody),
-          }
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Gemini serverless API error ${response.status}: ${errorText}`
         );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorCode = null;
-          try {
-            errorCode = JSON.parse(errorText)?.error?.code;
-          } catch {}
-          if (errorCode === 429) {
-            console.warn(`Gemini key quota exceeded: ${apiKey}`);
-            continue; // try next key
-          }
-          throw new Error(`Gemini API error ${response.status}: ${errorText}`);
-        }
-
-        const data = await response.json();
-        if (!data.candidates || !data.candidates.length)
-          throw new Error("Invalid response from Gemini API");
-        return data; // ✅ success
-      } catch (err) {
-        console.warn(`Gemini request failed with key ${apiKey}:`, err.message);
-        continue;
       }
-    }
 
-    throw new Error("All Gemini API keys failed or quota exceeded");
+      const data = await response.json();
+      if (!data.candidates || !data.candidates.length)
+        throw new Error("Invalid response from Gemini serverless function");
+      return data;
+    } catch (err) {
+      console.warn("Gemini request failed:", err.message);
+      throw err;
+    }
   }
 
   // ===== OPENAI REQUEST =====
@@ -138,11 +86,12 @@ export class APIService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Hugging Face API error ${response.status}: ${errorText}`);
+      throw new Error(
+        `Hugging Face API error ${response.status}: ${errorText}`
+      );
     }
 
     const data = await response.json();
-
     if (model.startsWith("Helsinki-NLP")) {
       if (!data[0]?.translation_text)
         throw new Error("Invalid translation response");
@@ -153,14 +102,11 @@ export class APIService {
       };
     }
 
-    if (!Array.isArray(data) || !data[0]?.generated_text) {
+    if (!Array.isArray(data) || !data[0]?.generated_text)
       throw new Error("Invalid HF response for text generation");
-    }
 
     return {
-      candidates: [
-        { content: { parts: [{ text: data[0].generated_text }] } },
-      ],
+      candidates: [{ content: { parts: [{ text: data[0].generated_text }] } }],
     };
   }
 
@@ -212,10 +158,10 @@ export class APIService {
   }
 
   // ===== CONTENT ANALYSIS =====
- // ===== CONTENT ANALYSIS =====
-s// ===== CONTENT ANALYSIS =====
-static async analyzeContent(content) {
-  const prompt = `Analyze this text and return ONLY JSON with this exact structure (no extra text):
+  // ===== CONTENT ANALYSIS =====
+  s; // ===== CONTENT ANALYSIS =====
+  static async analyzeContent(content) {
+    const prompt = `Analyze this text and return ONLY JSON with this exact structure (no extra text):
 {
   "summary": "Brief summary of content",
   "tags": ["tag1","tag2","tag3"],
@@ -229,49 +175,56 @@ static async analyzeContent(content) {
 }
 Text: "${content}"`;
 
-  try {
-    const response = await this.generateText(prompt);
-    let textResult = response.candidates[0].content.parts[0].text.trim();
+    try {
+      const response = await this.generateText(prompt);
+      let textResult = response.candidates[0].content.parts[0].text.trim();
 
-    // Strip code fences
-    textResult = textResult.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+      // Strip code fences
+      textResult = textResult
+        .replace(/```(?:json)?/gi, "")
+        .replace(/```/g, "")
+        .trim();
 
-    // Extract only JSON
-    const match = textResult.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("No JSON found in response");
+      // Extract only JSON
+      const match = textResult.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON found in response");
 
-    textResult = match[0];
+      textResult = match[0];
 
-    // Parse safely
-    const parsed = JSON.parse(textResult);
+      // Parse safely
+      const parsed = JSON.parse(textResult);
 
-    // ✅ Validate structure before returning
-    if (
-      typeof parsed.summary !== "string" ||
-      !Array.isArray(parsed.tags) ||
-      !Array.isArray(parsed.grammarIssues) ||
-      !Array.isArray(parsed.glossaryTerms) ||
-      !Array.isArray(parsed.insights)
-    ) {
-      throw new Error("Parsed JSON missing required fields");
+      // ✅ Validate structure before returning
+      if (
+        typeof parsed.summary !== "string" ||
+        !Array.isArray(parsed.tags) ||
+        !Array.isArray(parsed.grammarIssues) ||
+        !Array.isArray(parsed.glossaryTerms) ||
+        !Array.isArray(parsed.insights)
+      ) {
+        throw new Error("Parsed JSON missing required fields");
+      }
+
+      return parsed;
+    } catch (err) {
+      console.warn(
+        "Content analysis failed. Invalid API response:",
+        err.message
+      );
+
+      // Hard fallback
+      return {
+        summary: "Fallback analysis",
+        tags: ["note", "content"],
+        grammarIssues: [],
+        glossaryTerms: [],
+        insights: [
+          {
+            title: "Fallback",
+            description: "API returned invalid or malformed JSON",
+          },
+        ],
+      };
     }
-
-    return parsed;
-  } catch (err) {
-    console.warn("Content analysis failed. Invalid API response:", err.message);
-
-    // Hard fallback
-    return {
-      summary: "Fallback analysis",
-      tags: ["note", "content"],
-      grammarIssues: [],
-      glossaryTerms: [],
-      insights: [
-        { title: "Fallback", description: "API returned invalid or malformed JSON" },
-      ],
-    };
   }
-}
-
-
 }
